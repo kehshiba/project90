@@ -50,7 +50,7 @@ export function cloudErrorMessage(error: unknown): string {
     return "Couldn't reach the cloud service. Check your connection and try again.";
   }
   if (lower.includes("signups not allowed") || lower.includes("user not found")) {
-    return "That email isn't set up for this tracker yet. Add it in Supabase first.";
+    return "No confirmed Supabase user matches this email. Check the exact address in Authentication → Users, confirm the user, and make sure this site uses the same Supabase project.";
   }
   if (lower.includes("rate limit") || lower.includes("too many")) {
     return "Too many sign-in emails were requested. Wait a few minutes and try again.";

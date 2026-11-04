@@ -33,19 +33,28 @@ anonymous grants, and adds owner-only select/insert/update/delete policies.
 The app intentionally does **not** allow sign-ups. The account must exist first.
 
 1. Open **Authentication** → **Users**.
-2. Click **Add user** → **Create new user**.
+2. Click **Add user** → **Create new user** (not **Send invitation**).
 3. Enter the email address you want to use.
 4. Set any password (it is not used by the app), and enable **Auto Confirm User**
    if the option is shown.
 5. Click **Create user**.
+6. Confirm the user row shows a confirmed email. If it says **Waiting for
+   verification** or **Invited**, confirm it from the user menu before trying to
+   sign in. An unconfirmed user cannot receive a magic link while sign-ups are
+   closed.
 
 > Use the same email on every device. The magic link is sent to this address.
+> “Send invitation” creates an unconfirmed user; finish the invite flow or use
+> **Create new user** with auto-confirm instead.
 
 ## 4. Close sign-ups
 
-1. Open **Authentication** → **Sign In / Providers** (or **Providers**) → **Email**.
-2. Turn **Allow new users to sign up** off.
+1. Open **Authentication** → **Sign In / Providers**.
+2. Find the general **Allow new users to sign up** option and turn it off.
 3. Save.
+
+Keep the **Email** provider itself enabled, and keep magic links/email OTP
+enabled. Turning off the Email provider blocks existing users from signing in.
 
 Now a visitor cannot create an account even though the public anon key is visible
 in the browser. Only the user you created can request a login link.
@@ -201,9 +210,42 @@ Netlify Free:
 
 ## Troubleshooting
 
-**“Signups not allowed for otp” / no email arrives**
-The owner account does not exist, or the email is different. Create it in
-**Authentication → Users**, then request a new link. Check spam too.
+**“That email isn’t set up…” / “Signups not allowed for otp”**
+Supabase could not find a **confirmed** user for that exact email in the project
+your site is using. Check these in order:
+
+1. Compare the project ref in `NEXT_PUBLIC_SUPABASE_URL` (Netlify environment
+   variables) with the project where you created the user.
+2. Open **Authentication → Users** and search for the exact address, including
+   any `+alias`.
+3. If the user is missing, use **Add user → Create new user** with
+   **Auto Confirm User** enabled.
+4. If the user exists but is **Waiting for verification** or **Invited**, confirm
+   the email from the user menu.
+
+To inspect the account, run this in the Supabase SQL Editor:
+
+```sql
+select email, email_confirmed_at, created_at
+from auth.users
+where lower(email) = lower('you@example.com');
+```
+
+If `email_confirmed_at` is null for your own account, confirm it from the
+dashboard. As a last resort, the SQL Editor can set it:
+
+```sql
+update auth.users
+set email_confirmed_at = now()
+where lower(email) = lower('you@example.com')
+  and email_confirmed_at is null;
+```
+
+Prefer the dashboard action. Never expose this SQL through the app or a
+client-callable function.
+
+Also check spam for the magic-link email. The free Supabase email service is
+rate-limited.
 
 **Link expired or already used**
 Magic links are one-time. Return to the site and request a fresh one.
