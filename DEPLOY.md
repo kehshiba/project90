@@ -221,6 +221,23 @@ Your local data is safe. Check the Supabase project is not paused, then press
 The environment variables were missing at build time. Add them in Netlify and
 trigger a new production deploy.
 
+**Netlify build fails with “Secrets scanning found secrets”**
+This is a false positive for `NEXT_PUBLIC_SUPABASE_URL` and
+`NEXT_PUBLIC_SUPABASE_ANON_KEY`. Next.js compiles those values into the public
+browser bundle on purpose; the anon/publishable key is designed to be visible.
+`netlify.toml` already exempts exactly those two names with
+`SECRETS_SCAN_OMIT_KEYS`. If the build still fails, check that the Netlify site
+does not override that variable:
+
+1. **Project configuration → Environment variables**
+2. Add or edit `SECRETS_SCAN_OMIT_KEYS` with:
+   `NEXT_PUBLIC_SUPABASE_URL,NEXT_PUBLIC_SUPABASE_ANON_KEY`
+3. Redeploy.
+
+Do **not** set `SECRETS_SCAN_ENABLED=false`, and do **not** add the
+`service_role`/secret key to the exemption list. If a service-role key ever
+appears in build output, treat it as leaked and rotate it immediately.
+
 **Browser console shows a CSP error**
 Check the blocked URL in the console. The current policy allows Supabase REST/auth
 over `https://*.supabase.co`. If you add another service, update the

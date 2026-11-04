@@ -4,6 +4,10 @@
 
 [build.environment]
   NODE_VERSION = "22"
+  # Next.js inlines NEXT_PUBLIC_* values into the browser bundle by design.
+  # These two are public client configuration, not secrets. Exempt only these
+  # names so scanning still catches a real service_role or secret key.
+  SECRETS_SCAN_OMIT_KEYS = "NEXT_PUBLIC_SUPABASE_URL,NEXT_PUBLIC_SUPABASE_ANON_KEY"
 
 [[headers]]
   for = "/*"
