@@ -1,36 +1,89 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# THE 90-DAY CUT
 
-## Getting Started
+A private, local-first 90-day fitness and fat-loss tracker. Log daily weight,
+calories, protein, steps, water, sleep, notes, and full workout set logs. The
+calendar, streaks, insights, achievements, weekly summaries, CSV workout import,
+and dark mode all work offline.
 
-First, run the development server:
+Data is saved instantly in the browser. Optionally, one private Supabase snapshot
+keeps a phone and laptop in sync.
+
+## Features
+
+- 90-day calendar with daily status colors and streak tracking
+- Weight, calories, protein, steps, water, sleep, and notes
+- Workout set tables with CSV paste/import:
+  `date,workout,exercise,muscle_group,set_number,planned_reps,actual_reps,weight_kg,assisted,rir,completed,notes`
+- Insights, achievements, weekly summaries, and trend charts
+- JSON backup export/import (older backups stay compatible)
+- Full dark mode
+- Optional Supabase magic-link login and cloud sync with a local `localStorage` cache
+- Row Level Security: only the owner account can read or write the cloud row
+
+## Run locally
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open <http://localhost:3000>.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Without environment variables the app runs in local-only mode. To enable cloud
+sync, copy `.env.example` to `.env.local` and fill in the Supabase project URL and
+public anon key. See [DEPLOY.md](DEPLOY.md) for the complete Supabase and Netlify
+setup.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Deploy
 
-## Learn More
+The app deploys free on Netlify with Supabase as the private cloud store.
 
-To learn more about Next.js, take a look at the following resources:
+Follow the step-by-step guide: **[DEPLOY.md](DEPLOY.md)**.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Data and backups
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- The browser copy is the instant/offline source of truth while you use the app.
+- When signed in to cloud sync, changes upload after a short debounce.
+- If this browser and the cloud both have different saved data, the app asks once
+  which copy to keep. Export a JSON backup before choosing.
+- Supabase Free has no automatic backups. Use **Settings → Export JSON backup**
+  regularly and keep the file somewhere safe.
+- Supabase Free projects pause after 7 days without activity. Open the project
+  dashboard to restore it, then sync again.
 
-## Deploy on Vercel
+## Scripts
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+npm run dev          # start development
+npm run build        # production build
+npm run start        # run the production build
+npm run theme:dark   # regenerate app/dark-theme.css after style changes
+npx tsc --noEmit     # typecheck
+npx eslint .         # lint
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Security
+
+- The public site URL only exposes the magic-link sign-in screen to visitors.
+- Sign-ups are disabled; the owner account is created once in Supabase.
+- The browser ships only the public anon/publishable Supabase key. The
+  `service_role` key must never be used in this app.
+- Every cloud row is protected by RLS policies that compare `auth.uid()` with
+  `user_id`.
+- `netlify.toml` sets CSP, HSTS, frame denial, MIME sniffing protection, a
+  restrictive permissions policy, and `noindex` headers.
+
+## Project structure
+
+```text
+app/                 Next.js app shell, metadata, global styles
+components/          Tracker UI, auth screen, cloud conflict/status components
+lib/challenge.ts     Challenge types, defaults, stats, calendar helpers
+lib/storage.ts       Validated localStorage and JSON import/export
+lib/supabase.ts      Lazy browser Supabase client
+lib/cloud.ts         Cloud snapshot and auth helpers
+lib/use-cloud-sync.ts  Auth state, hydration, conflict handling, autosave
+supabase/schema.sql  Table, RLS policies, and grants
+netlify.toml         Build settings and security headers
+DEPLOY.md            Full free-tier deployment guide
+```
